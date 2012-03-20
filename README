@@ -1,0 +1,7 @@
+PeggyVine - A FTP client for gLite Grid Enviroments
+###################################################
+20.3.2012
+
+This is a Python 2.4 based FTP Client using the python-lfc ( https://gilda.ct.infn.it/wikimain/-/wiki/Main/LfcAPI ) library.
+
+Author: Pasieka Manuel , mapa17@posgrado.upv.es
