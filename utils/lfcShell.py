@@ -38,9 +38,16 @@ class lfcShell (Shell):
     
     def _lfc_ls(self, args):
         if(len(args) > 2):
-            lfcCmd.ls( self._currentPath + '/' + args[1] )
+            fileList = lfcCmd.ls( self._currentPath + '/' + args[1] )
         else:
-            lfcCmd.ls( self._currentPath )
+            fileList = lfcCmd.ls( self._currentPath )
+        
+        for i in fileList:
+            if( i["type"] == "dir" ):
+                print("d%s%s%s %s %s %s" % (i["acl"]["owner_perm"], i["acl"]["group_perm"], i["acl"]["others_perm"], i["acl"]["owner"], i["acl"]["group"], i["name"]) )
+            elif( i["type"] == "file" ):
+                print("-%s%s%s %s %s %s" % (i["acl"]["owner_perm"], i["acl"]["group_perm"], i["acl"]["others_perm"], i["acl"]["owner"], i["acl"]["group"], i["name"]) )
+        
     
     def _lls(self, args):
         args.pop(0)
