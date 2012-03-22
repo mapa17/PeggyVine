@@ -4,7 +4,12 @@ Created on Mar 21, 2012
 @author: Pasieka Manuel , mapa17@posgrado.upv.es
 '''
 
+import os
+import sys
+
 from utils.SimpleShell import Shell
+from utils.lfcCmd import lfcCmd
+
 
 class lfcShell (Shell):
 
@@ -16,9 +21,12 @@ class lfcShell (Shell):
         self.addCmd("get", self._get )
         self.addCmd("info", self._info )
         
-        self.addCmd("ls", self._ls )
+        self.addCmd("ls", self._lfc_ls )
+        self.addCmd("lls", self._lls )
         self.addCmd("x" , self._x)
-    
+   
+        self._currentPath = os.environ["LFC_HOME"]
+        
     def _put(self, args):
         raise NotImplementedError("Missing implementation of put")
     
@@ -27,8 +35,14 @@ class lfcShell (Shell):
 
     def _info(self, args):
         raise NotImplementedError("Missing implementation of info")
-                  
-    def _ls(self, args):
+    
+    def _lfc_ls(self, args):
+        if(len(args) > 2):
+            lfcCmd.ls( self._currentPath + '/' + args[1] )
+        else:
+            lfcCmd.ls( self._currentPath )
+    
+    def _lls(self, args):
         args.pop(0)
         args = ["ls"] + args
         #print("Calling with %s" % c)
