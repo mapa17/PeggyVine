@@ -16,8 +16,13 @@ class Shell(object):
         self.addCmd("q", self._quit )
         self.addCmd("quit", self._quit )
         self.addCmd("exit", self._quit )
-        
+ 
+        self.addCmd("lls", self._lls )
+        self.addCmd("x" , self._x)
+  
         self._quitFlag = False
+
+        self._currentPath = "."
         
     def run(self):
         
@@ -40,6 +45,24 @@ class Shell(object):
 
         print("Exiting shell ...")
     
+    def _x(self, args):
+        args.pop(0)
+        (rV, output , err) = self.runCmd(args)
+        if( rV == 0):
+            for l in output : print l
+        else:
+            for l in err : print l
+     
+    def _lls(self, args):
+        args.pop(0)
+        args = ["ls"] + args
+        #print("Calling with %s" % c)
+        (rV, output , err) = self.runCmd(args)
+        if( rV == 0):
+            for l in output : print l
+        else:
+            for l in err : print l
+     
     def addCmd(self, cmd, function):
         self._cmds[cmd] = function
         pass

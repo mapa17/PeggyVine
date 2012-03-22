@@ -6,6 +6,7 @@ Created on Mar 21, 2012
 
 import os
 import sys
+import re
 
 from utils.SimpleShell import Shell
 from utils.lfcCmd import lfcCmd
@@ -21,11 +22,16 @@ class lfcShell (Shell):
         self.addCmd("get", self._get )
         self.addCmd("info", self._info )
         
-        self.addCmd("ls", self._lfc_ls )
-        self.addCmd("lls", self._lls )
-        self.addCmd("x" , self._x)
-   
-        self._currentPath = os.environ["LFC_HOME"]
+        self.addCmd("cd", self._cd )
+        self.addCmd("ls", self._ls )
+        self.addCmd("LS", self._ls )
+        self.addCmd("pwd", self._pwd )
+        
+        #Override the currentPath 
+        self._currentLFCPath = os.environ["LFC_HOME"]
+        
+        #Store file listeing of current directory, will be updated by _ls and by _cd
+        self._currentFileList = self._lfc_getDirListing(self._currentLFCPath)
         
     def _put(self, args):
         raise NotImplementedError("Missing implementation of put")
@@ -36,34 +42,62 @@ class lfcShell (Shell):
     def _info(self, args):
         raise NotImplementedError("Missing implementation of info")
     
-    def _lfc_ls(self, args):
-        if(len(args) > 2):
-            fileList = lfcCmd.ls( self._currentPath + '/' + args[1] )
+    def _cd(self, args):
+    
+        if(len(args) < 2):
+            print("Too few arguments! You have to specify a directory to change to!")
+            return
+    
+        if( args[1] == ".." ):
+            path = re.match( "(^.*)\/[^\/]*$", self._currentLFCPath ).group(1) #Trim of path after last /
+            if path == "" :
+                path = "/"
         else:
-            fileList = lfcCmd.ls( self._currentPath )
+            path = self._currentLFCPath + '/' + args[1]
+            
+        if ( lfcCmd.cd(path) == None ):
+            print("Error, entering [%s] was not possible!" % path)
+        else:
+            print("Entering [%s]" % path)
+            self._currentLFCPath = path
+        pass
+    
+    def _pwd(self, args):
+        print("%s" % self._currentLFCPath)
+        
+    def _ls(self, args):
+        
+        if(args[0] == "LS"):
+            fullOut = True
+        else:
+            fullOut = False
+            
+        if(len(args) > 2):
+            fileList = self._lfc_getDirListing( self._currentLFCPath + '/' + args[1] )
+        else:
+            fileList = lfcCmd.ls( self._currentLFCPath )
+                
+        self.self_currentFileList = fileList
         
         for i in fileList:
-            if( i["type"] == "dir" ):
-                print("d%s%s%s %s %s %s" % (i["acl"]["owner_perm"], i["acl"]["group_perm"], i["acl"]["others_perm"], i["acl"]["owner"], i["acl"]["group"], i["name"]) )
-            elif( i["type"] == "file" ):
-                print("-%s%s%s %s %s %s" % (i["acl"]["owner_perm"], i["acl"]["group_perm"], i["acl"]["others_perm"], i["acl"]["owner"], i["acl"]["group"], i["name"]) )
-        
-    
-    def _lls(self, args):
-        args.pop(0)
-        args = ["ls"] + args
-        #print("Calling with %s" % c)
-        (rV, output , err) = self.runCmd(args)
-        if( rV == 0):
-            for l in output : print l
-        else:
-            for l in err : print l
+            owner = i["acl"]["owner"]
+            if(fullOut):
+                guid = i["GUID"]
+            else:
+                guid = ""
+                owner = re.match(".*CN=([\w|-]*)", owner).group(1)
                 
-    def _x(self, args):
-        args.pop(0)
-        (rV, output , err) = self.runCmd(args)
-        if( rV == 0):
-            for l in output : print l
-        else:
-            for l in err : print l
-        
+            if( i["type"] == "dir" ):
+                sys.stdout.write("d")
+            elif( i["type"] == "file" ):
+                sys.stdout.write("-")
+            else:
+                sys.stdout.write("?")
+            
+            print("%s%s%s \t %s \t %s \t %s \t %s" % (i["acl"]["owner_perm"], i["acl"]["group_perm"], i["acl"]["others_perm"], owner, i["acl"]["group"], guid, i["name"]) )        
+    
+    def _lfc_getDirListing(self, path):
+        return lfcCmd.ls( path )
+    
+               
+       

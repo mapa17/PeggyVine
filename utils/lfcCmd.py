@@ -19,10 +19,17 @@ class lfcCmd(object):
     def __init__(self):
         pass
     
+    def cd(path):
+        dirRef = lfc.lfc_opendirg(path,"")
+        return dirRef
+    
     def ls(path):
         fileList = []
         
-        dirRef = lfc.lfc_opendirg(path,"")
+        dirRef = lfcCmd.cd(path)
+               
+        if( dirRef == None):
+            return fileList
         
         try:
             
@@ -36,14 +43,15 @@ class lfcCmd(object):
                 
                 if entry.guid == "":
                     element["type"] = "dir" #Directory
+                    element["GUID"] = ""
                 else:
                     element["type"] = "file"
                     element["GUID"] = entry.guid
                      
                     if rpList != None: #Iterate the replication list
                         reps = []
-                        for i in range(len(list) ):
-                            reps.append(list[i].sfn)
+                        for i in range(len(rpList) ):
+                            reps.append(rpList[i].sfn)
                         element["Replicas"] = reps 
                 
                 fileList.append(element)
@@ -51,12 +59,12 @@ class lfcCmd(object):
                 entry,rpList = lfc.lfc_readdirxr(dirRef,"")
                 
         except Exception , e:
-            print("Exception : %s" % str(e) )
+            print("Exception [%s] : %s" % ( str(type(e)) , str(e) ) )
 
         return fileList
     
     def getacl(path):
-        print("Get acl for %s", path)
+        #print("Get acl for %s" % path)
         acl = {}
         nentries, acls_list = lfc.lfc_getacl(path, lfc.CA_MAXACLENTRIES)
         #print "nEntries %d" % nentries
@@ -110,7 +118,7 @@ class lfcCmd(object):
                 return "[INVALID GID]"
             
             
-            
+    cd = staticmethod(cd)
     ls=staticmethod(ls)
     getacl = staticmethod(getacl)
     _numToPermString = staticmethod(_numToPermString)
