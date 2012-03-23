@@ -27,6 +27,8 @@ class lfcShell (Shell):
         self.addCmd("LS", self._ls )
         self.addCmd("pwd", self._pwd )
         
+        self.addCmd("put", self._put )
+        
         #Override the currentPath 
         self._currentLFCPath = os.environ["LFC_HOME"]
         
@@ -41,6 +43,10 @@ class lfcShell (Shell):
 
     def _info(self, args):
         raise NotImplementedError("Missing implementation of info")
+    
+    
+    def _put(self, args):
+        pass
     
     def _cd(self, args):
     

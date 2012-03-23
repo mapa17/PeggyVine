@@ -19,6 +19,9 @@ class lfcCmd(object):
     def __init__(self):
         pass
     
+    def cr(self, srcFile, destFile):
+        pass
+    
     def cd(path):
         dirRef = lfc.lfc_opendirg(path,"")
         return dirRef
