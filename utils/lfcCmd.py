@@ -5,10 +5,11 @@ Created on Mar 21, 2012
 '''
 
 import sys
+import stat
 import os
 
-sys.path.append( os.environ["LCG_LOCATION"] )
-import lfc
+sys.path.append( os.environ["LCG_LOCATION"] + "/lib64/python2.4/site-packages/" )
+import lfc2 as lfc
 
 
 class lfcCmd(object):
@@ -23,7 +24,7 @@ class lfcCmd(object):
         pass
     
     def cd(path):
-        dirRef = lfc.lfc_opendirg(path,"")
+        dirRef = lfc.lfc_opendir(path)
         return dirRef
     
     def ls(path):
@@ -36,30 +37,30 @@ class lfcCmd(object):
         
         try:
             
-            entry,rpList = lfc.lfc_readdirxr(dirRef,"")
+            entry = lfc.lfc_readdirxr(dirRef)
     
             while entry != None :
                  
                 element = {} #Create a hash map for every directory element 
                 element["name"] = entry.d_name
+
                 element["acl"] = lfcCmd.getacl(path + '/' + element["name"] )
                 
-                if entry.guid == "":
+                if( stat.S_ISDIR(entry.filemode) == True ):
                     element["type"] = "dir" #Directory
                     element["GUID"] = ""
                 else:
                     element["type"] = "file"
                     element["GUID"] = entry.guid
                      
-                    if rpList != None: #Iterate the replication list
-                        reps = []
-                        for i in range(len(rpList) ):
-                            reps.append(rpList[i].sfn)
-                        element["Replicas"] = reps 
+                    reps = []
+                    for i in range( entry.nbreplicas ):
+                        reps.append(entry.rep[i].sfn)
+                    element["Replicas"] = reps 
                 
                 fileList.append(element)
 
-                entry,rpList = lfc.lfc_readdirxr(dirRef,"")
+                entry = lfc.lfc_readdirxr(dirRef)
                 
         except Exception , e:
             print("Exception [%s] : %s" % ( str(type(e)) , str(e) ) )
@@ -69,9 +70,7 @@ class lfcCmd(object):
     def getacl(path):
         #print("Get acl for %s" % path)
         acl = {}
-        nentries, acls_list = lfc.lfc_getacl(path, lfc.CA_MAXACLENTRIES)
-        #print "nEntries %d" % nentries
-        #print "len %d" % len(acls_list)
+        acls_list = lfc.lfc_getacl(path)
         for i in acls_list:
             #print "type %d" % i.a_type
             if( i.a_type == 1): #User permissions
@@ -100,9 +99,9 @@ class lfcCmd(object):
         if (lfcCmd.users.has_key(uid)):
             return lfcCmd.users[uid] 
         else:
-            name = " "*100
-            ret = lfc.lfc_getusrbyuid(uid, name)
-            if( ret == 0):
+            name = lfc.lfc_getusrbyuid(uid)
+            if( name != None ):
+                #print( "Resolving uid %d -> %s" % (uid, name) )
                 lfcCmd.users[uid] = name.strip()
                 return lfcCmd.users[uid]
             else:
@@ -112,9 +111,9 @@ class lfcCmd(object):
         if (lfcCmd.groups.has_key(gid)):
             return lfcCmd.groups[gid] 
         else:
-            name = " "*100
-            ret = lfc.lfc_getgrpbygid(gid, name)
-            if( ret == 0):
+            name = lfc.lfc_getgrpbygid(gid)
+            if( name != None ):
+                #print( "Resolving gid %d -> %s" % (gid, name) )
                 lfcCmd.groups[gid] = name.strip()
                 return lfcCmd.groups[gid]
             else:

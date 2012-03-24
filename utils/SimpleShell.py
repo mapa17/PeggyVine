@@ -5,6 +5,7 @@ Created on Mar 20, 2012
 '''
 
 import sys
+import os
 import re
 import subprocess
 
@@ -17,12 +18,14 @@ class Shell(object):
         self.addCmd("quit", self._quit )
         self.addCmd("exit", self._quit )
  
+        self.addCmd("export", self._export )
         self.addCmd("lls", self._lls )
         self.addCmd("x" , self._x)
   
         self._quitFlag = False
 
-        self._currentPath = "."
+        self._env = {}
+        self._setEnv("PWD", os.getcwd() )
         
     def run(self):
         
@@ -44,6 +47,18 @@ class Shell(object):
                 print("Cmd [%s] not found!" % uinput[0] )
 
         print("Exiting shell ...")
+   
+    def _setEnv(self, key, value):
+        self._env[key] = value
+    
+    def _export(self, args):
+        if( len(args) > 2):
+            self._setEnv(args[1], args[2] )
+
+        print("Environment")
+        for k,v in self._env.iteritems():
+            print("%s = %s" % (k , v) )
+            
     
     def _x(self, args):
         args.pop(0)
@@ -72,7 +87,7 @@ class Shell(object):
         p = subprocess.Popen(cmds, bufsize=100, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (outp, err) = p.communicate()
         output = outp.split('\n')
-        #print("Executed cmd [%s], got [%s]" % (cmds, output) )
+        #print("Executed cmd [%s], got [%d , %s , %s ]" % (cmds, p.returncode, output, err) )
         return (p.returncode, output, err)
     
     def _quit(self, args):

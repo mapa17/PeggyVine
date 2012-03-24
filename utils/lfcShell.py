@@ -10,6 +10,7 @@ import re
 
 from utils.SimpleShell import Shell
 from utils.lfcCmd import lfcCmd
+from utils.lcgCmd import lcgCmd
 
 
 class lfcShell (Shell):
@@ -27,26 +28,78 @@ class lfcShell (Shell):
         self.addCmd("LS", self._ls )
         self.addCmd("pwd", self._pwd )
         
-        self.addCmd("put", self._put )
+        self.addCmd("se", self._se ) 
         
         #Override the currentPath 
-        self._currentLFCPath = os.environ["LFC_HOME"]
+        self._setEnv( "LFCPath" , os.environ["LFC_HOME"])
+        self._setEnv( "VO" , os.environ["LCG_GFAL_VO"])
         
         #Store file listeing of current directory, will be updated by _ls and by _cd
-        self._currentFileList = self._lfc_getDirListing(self._currentLFCPath)
+        self._currentFileList = [] #self._lfc_getDirListing( self._env["LFCPath"] )
+        
+        self._seList = []
+        
+    def _se(self, args):
+        
+        if( len( self._seList ) == 0 ):
+            self._getSeList()
+       
+        print("Replica List for VO %s" % self._env["VO"])
+        for idx, val in enumerate(self._seList) :
+            print("%d) %s" % (idx, val) )
+    
+    def _getSeList(self):
+        
+        (retValue, output, err) = self.runCmd( [ "lcg-infosites" , "se" , "--vo", self._env["VO"] ] )
+        print("Found se list [%s]" % output )
+        self._seList = []
+        for l in output:
+            t = re.search("\w*SRM\s*(\S*)", l)
+            if( t == None):
+                continue
+            t = t.group(1)
+            if(t != ""):
+                self._seList.append( t )
         
     def _put(self, args):
-        raise NotImplementedError("Missing implementation of put")
-    
+        if(len(args) < 4):
+            print("Too few arguments! [%s] [src_file] [lfn direction] [index of se]" % ( args[0] ))
+            return
+  
+  #lcg-cr --vo your_vo -d srm://srm.grid.sara.nl:8443/pnfs/grid.sara.nl/data/your_vo/your_dir/text_file.txt \
+  # -l lfn:/grid/your_vo/your_username/text_file.txt "file://$PWD/text_file.txt"
+        
+        dest = "lfn:/" + self._env["LFCPath"] + "/" + args[2]
+        
+        src = "file://" + self._env["PWD"] + "/" + args[1]
+        
+        seidx = int(args[3])
+        if( (seidx == None) or (seidx < 0)  or (seidx > len(self._seList)) ):
+            print("Illegal se index!")
+            return
+        
+        se = self._seList[seidx] 
+            
+        lcgCmd.cr( src, dest, se, self._env["VO"] ) 
+        
+        
     def _get(self, args):
-        raise NotImplementedError("Missing implementation of get")
+        if(len(args) < 2):
+            print("Too few arguments! [%s] [src_file] <dest_file]>" % ( args[0] ))
+            return
+        
+        src = "lfn:/" + self._env["LFCPath"] + "/" + args[1]
+        
+        if( len(args) == 2):
+            dest = "file://" + self._env["PWD"] + "/" + args[1]            
+        else:
+            dest = "file://" + self._env["PWD"] + "/" + args[2]
+            
+        lcgCmd.cp( src, dest, self._env["VO"] )
 
     def _info(self, args):
         raise NotImplementedError("Missing implementation of info")
     
-    
-    def _put(self, args):
-        pass
     
     def _cd(self, args):
     
@@ -55,21 +108,21 @@ class lfcShell (Shell):
             return
     
         if( args[1] == ".." ):
-            path = re.match( "(^.*)\/[^\/]*$", self._currentLFCPath ).group(1) #Trim of path after last /
+            path = re.search( "(^.*)\/[^\/]*$", self._env["LFCPath"] ).group(1) #Trim of path after last /
             if path == "" :
                 path = "/"
         else:
-            path = self._currentLFCPath + '/' + args[1]
+            path = self._env["LFCPath"] + '/' + args[1]
             
         if ( lfcCmd.cd(path) == None ):
             print("Error, entering [%s] was not possible!" % path)
         else:
             print("Entering [%s]" % path)
-            self._currentLFCPath = path
+            self._env["LFCPath"] = path
         pass
     
     def _pwd(self, args):
-        print("%s" % self._currentLFCPath)
+        print("%s" % self._env["LFCPath"])
         
     def _ls(self, args):
         
@@ -79,19 +132,22 @@ class lfcShell (Shell):
             fullOut = False
             
         if(len(args) > 2):
-            fileList = self._lfc_getDirListing( self._currentLFCPath + '/' + args[1] )
+            fileList = self._lfc_getDirListing( self._env["LFCPath"] + '/' + args[1] )
         else:
-            fileList = lfcCmd.ls( self._currentLFCPath )
+            fileList = lfcCmd.ls( self._env["LFCPath"] )
                 
-        self.self_currentFileList = fileList
+        self._currentFileList = fileList
         
         for i in fileList:
+            
             owner = i["acl"]["owner"]
             if(fullOut):
                 guid = i["GUID"]
+                outputformat = "%s%s%s \t %-50s \t %15s \t %20s \t %s"
             else:
                 guid = ""
-                owner = re.match(".*CN=([\w|-]*)", owner).group(1)
+                owner = re.search(".*CN=([\w|-]*)", owner).group(1)
+                outputformat = "%s%s%s \t %-20s \t %15s \t %20s \t %s"
                 
             if( i["type"] == "dir" ):
                 sys.stdout.write("d")
@@ -100,7 +156,7 @@ class lfcShell (Shell):
             else:
                 sys.stdout.write("?")
             
-            print("%s%s%s \t %s \t %s \t %s \t %s" % (i["acl"]["owner_perm"], i["acl"]["group_perm"], i["acl"]["others_perm"], owner, i["acl"]["group"], guid, i["name"]) )        
+            print( outputformat % (i["acl"]["owner_perm"], i["acl"]["group_perm"], i["acl"]["others_perm"], owner, i["acl"]["group"], guid, i["name"]) )        
     
     def _lfc_getDirListing(self, path):
         return lfcCmd.ls( path )

@@ -15,6 +15,14 @@ if os.environ.has_key( "LFC_HOME" ) == False :
     print("Error %s environment variable not set! e.g: export LFC_HOME = \"/grid/tut.vo.ibergrid.eu\"" % "LFC_HOME")
     sys.exit(-1)
 
+if os.environ.has_key( "LCG_GFAL_VO" ) == False :
+    print("Error %s environment variable not set! e.g: export LCG_GFAL_VO = \"tut.vo.ibergrid.eu\"" % "LCG_GFAL_VO")
+    sys.exit(-1)
+    
+    
+    
+    
+
 
 from utils.lfcShell import lfcShell
 
