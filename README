@@ -1,7 +1,41 @@
-PeggyVine - A FTP client for gLite Grid Enviroments
+PeggyVine - A FTP client for gLite Grid Environments
 ###################################################
-20.3.2012
+Started on 20.3.2012
 
-This is a Python 2.4 based FTP Client using the python-lfc ( https://gilda.ct.infn.it/wikimain/-/wiki/Main/LfcAPI ) library.
+This is a Python 2.4 based Grid FTP Client using the lfc2 library for ptyhon ( ubuntu package
+python-lfc , https://gilda.ct.infn.it/wikimain/-/wiki/Main/LfcAPI ).
+
+Usage
+#####
+Make sure to have setup a proxy using 'grit-proxy-init'
+
+Extract source and inside the source folder run
+'python2 ./PeggyVine.py'
+
+Program will run in a shell like environment promting '>>'
+Run 'help' to get a list of supported commands
+
+Installation
+############
+The program depends on >python2.4 , lfc2 python library and lcg_util python library.
+
+Make sure the following environment variables are set
+"LCG_LOCATION" ... path to the lfc2 and lcg_util installation ( assuming subpath '/lib64/python2.4/site-packages/'
+if not, change head of source file utils/lfcCmd.py accordingly)
+	e.g. export LCG_LOCATION = "/opt/lcg"
+	
+"LFC_HOME" ... default LFC path
+	e.g. export LFC_HOME = "/grid/tut.vo.ibergrid.eu" 
+
+"LCG_GFAL_VO" ... Specifies the grid VO to use
+	e.g. export LCG_GFAL_VO = "tut.vo.ibergrid.eu"
+
+Bugs
+####
+Well, time will tell ...
+
+Notes
+#####
+If you make any real of this application or want a neat feature, let me know!
 
 Author: Pasieka Manuel , mapa17@posgrado.upv.es
