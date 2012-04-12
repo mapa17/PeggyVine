@@ -24,10 +24,10 @@ if os.environ.has_key( "LCG_GFAL_VO" ) == False :
     
 
 
-from utils.lfcShell import lfcShell
+from utils.gridShell import gridShell
 
 if __name__ == '__main__':
     
-    s = lfcShell()
+    s = gridShell()
     s.run()
     pass

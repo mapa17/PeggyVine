@@ -7,7 +7,7 @@ Created on Mar 20, 2012
 import sys
 import os
 import re
-import subprocess
+import commands
 
 class Shell(object):
 
@@ -83,11 +83,8 @@ class Shell(object):
     
     def _x(self, args):
         args.pop(0)
-        (rV, output , err) = self.runCmd(args)
-        if( rV == 0):
-            for l in output : print l
-        else:
-            for l in err : print l
+        (rV, output) = self.runCmdArray(args)
+        for l in output : print l
     
     def _lpwd(self, args):
         print("%s" % self._env["LPWD"])
@@ -104,11 +101,8 @@ class Shell(object):
                 path = self._env["LPWD"] + args[1]
         
         #print("Calling with %s" % ["ls" , path] )
-        (rV, output , err) = self.runCmd(["ls" , path])
-        if( rV == 0):
-            for l in output : print l
-        else:
-            for l in err : print l
+        (rV, output) = self.runCmd("ls %s" % path)
+        for l in output : print l
     
     def _lcd(self, args):
         if( len(args) < 2):
@@ -131,13 +125,21 @@ class Shell(object):
         self._cmds[cmd] = function_array
         pass
 
-    def runCmd(self, cmds):
+    def runCmdArray(self, cmdArray):
+        cmd = " ".join(cmdArray)
+        return self.runCmd(cmd)
+        
+    def runCmd(self, cmd):
+        (status, output) = commands.getstatusoutput(cmd)
+        output = output.split('\n')
+        return (status, output)
+        
         #print("Calling for cmd [%s]" % cmds)
-        p = subprocess.Popen(cmds, bufsize=100, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        (outp, err) = p.communicate()
-        output = outp.split('\n')
+        #p = subprocess.Popen(cmds, bufsize=100, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        #(outp, err) = p.communicate()
+        #output = outp.split('\n')
         #print("Executed cmd [%s], got [%d , %s , %s ]" % (cmds, p.returncode, output, err) )
-        return (p.returncode, output, err)
+        #return (p.returncode, output, err)
     
     def _quit(self, args):
         #print("Quit was called with arguments %s" % args)

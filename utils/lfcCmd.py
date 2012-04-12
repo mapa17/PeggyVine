@@ -9,8 +9,9 @@ import stat
 import os
 
 sys.path.append( os.environ["LCG_LOCATION"] + "/lib64/python2.4/site-packages/" )
+#import lfc2 as lfc
 import lfc2 as lfc
-
+import lfc as lfc1
 
 class lfcCmd(object):
 
@@ -23,23 +24,33 @@ class lfcCmd(object):
     def cr(self, srcFile, destFile):
         pass
     
-    def cd(path):
-        dirRef = lfc.lfc_opendir(path)
-        return dirRef
+    def cd(path, version = 2):
+        if(version == 1):
+            #import lfc
+            return lfc1.lfc_opendirg(path,"")
+        else:
+            return lfc.lfc_opendir(path)
     
-    def ls(path):
+    def _ls1(path):
+        #import lfc
         fileList = []
         
-        dirRef = lfcCmd.cd(path)
+        dirRef = lfcCmd.cd(path, version=1)
                
         if( dirRef == None):
+            err_num = lfc.cvar.serrno
+            err_string = lfc.sstrerror(err_num)
+            print("Could not get a dir Reference! Error [%s]" % err_string)
             return fileList
         
         try:
             
-            entry = lfc.lfc_readdirxr(dirRef)
-    
-            while entry != None :
+            while 1 :
+                readpT = lfc1.lfc_readdirxr(dirRef,"")
+                
+                if(readpT == None):
+                    break;
+                entry, list = readpT
                  
                 element = {} #Create a hash map for every directory element 
                 element["name"] = entry.d_name
@@ -54,17 +65,68 @@ class lfcCmd(object):
                     element["GUID"] = entry.guid
                      
                     reps = []
+                    for i in range( len(list) ):
+                        reps.append(list[i].sfn)
+                    element["Replicas"] = reps 
+                
+                fileList.append(element)
+
+                
+        except Exception , e:
+            print("Exception [%s] : %s" % ( str(type(e)) , str(e) ) )
+
+        lfc1.lfc_closedir(dirRef)
+        return fileList
+    
+    def ls(path, version = 2):
+        if(version == 1):
+            return lfcCmd._ls1(path)
+        else:
+            return lfcCmd._ls2(path)
+        
+    def _ls2(path):
+        fileList = []
+        
+        dirRef = lfcCmd.cd(path, version=2)
+               
+        if( dirRef == None):
+            print("Could not get a dir Reference!")
+            return fileList
+        
+        try:
+            
+            entry = lfc.lfc_readdirxr(dirRef)
+    
+            while entry != None :
+                 
+                element = {} #Create a hash map for every directory element 
+                element["name"] = entry.d_name
+
+                print("Get acl...\n")
+                element["acl"] = lfcCmd.getacl(path + '/' + element["name"] )
+                
+                if( stat.S_ISDIR(entry.filemode) == True ):
+                    element["type"] = "dir" #Directory
+                    element["GUID"] = ""
+                else:
+                    element["type"] = "file"
+                    element["GUID"] = entry.guid
+                     
+                    print("Get Replicate list [%d] elements\n"%entry.nbreplicas)
+                    reps = []
                     for i in range( entry.nbreplicas ):
                         reps.append(entry.rep[i].sfn)
                     element["Replicas"] = reps 
                 
                 fileList.append(element)
-
+                
+                print("Next ...\n")
                 entry = lfc.lfc_readdirxr(dirRef)
                 
         except Exception , e:
             print("Exception [%s] : %s" % ( str(type(e)) , str(e) ) )
 
+        lfc.lfc_closedir(dirRef)
         return fileList
     
     def getacl(path):
@@ -119,9 +181,11 @@ class lfcCmd(object):
             else:
                 return "[INVALID GID]"
             
-            
+      
+    ls=staticmethod(ls)      
+    _ls1=staticmethod(_ls1)
     cd = staticmethod(cd)
-    ls=staticmethod(ls)
+    _ls2=staticmethod(_ls2)
     getacl = staticmethod(getacl)
     _numToPermString = staticmethod(_numToPermString)
     _getusrbyuid = staticmethod(_getusrbyuid)
