@@ -12,6 +12,12 @@ class lcgCmd(object):
     def __init__(self):
         pass
  
+    #lcg-cp --vo tut.vo.ibergrid.eu lfn:/grid/tut.vo.ibergrid.eu/pegos/R1 file:/tmp/R22
+    def cpStr(src, dest, vo):
+        print("Trying to copy from [%s] to [%s] with vo [%s]" % ( src, dest, vo ))
+        s = "lcg-cp --vo %s %s file:%s"%(vo, src, dest)
+        return s
+ 
     def cp(src, dest, vo):
         
         src_file=src
@@ -58,7 +64,7 @@ class lcgCmd(object):
         s = "lcg-cr -d %s -l lfn:%s --vo %s %s"%(se, dest, vo, src)
         return s
         
-        
+    cpStr = staticmethod(cpStr)
     crStr = staticmethod(crStr)
     cr = staticmethod(cr)
     cp = staticmethod(cp)

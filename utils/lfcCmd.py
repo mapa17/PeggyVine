@@ -8,10 +8,13 @@ import sys
 import stat
 import os
 
-sys.path.append( os.environ["LCG_LOCATION"] + "/lib64/python2.4/site-packages/" )
-#import lfc2 as lfc
-import lfc2 as lfc
-import lfc as lfc1
+try:
+    sys.path.append( os.environ["LCG_LOCATION"] + "/lib64/python2.4/site-packages/" )
+    import lfc2 as lfc
+except ImportError:
+    print("Missing LFC2 library, please specify path to the LFC2 library!")
+
+#import lfc as lfc1
 
 class lfcCmd(object):
 
@@ -26,13 +29,14 @@ class lfcCmd(object):
     
     def cd(path, version = 2):
         if(version == 1):
-            #import lfc
-            return lfc1.lfc_opendirg(path,"")
+            raise NotImplementedError("Support for lfc1 was removed!") 
         else:
             return lfc.lfc_opendir(path)
     
     def _ls1(path):
-        #import lfc
+        
+        raise NotImplementedError("Support for lfc1 was removed!")
+        
         fileList = []
         
         dirRef = lfcCmd.cd(path, version=1)
@@ -102,7 +106,7 @@ class lfcCmd(object):
                 element = {} #Create a hash map for every directory element 
                 element["name"] = entry.d_name
 
-                print("Get acl...\n")
+                #print("Get acl...\n")
                 element["acl"] = lfcCmd.getacl(path + '/' + element["name"] )
                 
                 if( stat.S_ISDIR(entry.filemode) == True ):
@@ -112,7 +116,7 @@ class lfcCmd(object):
                     element["type"] = "file"
                     element["GUID"] = entry.guid
                      
-                    print("Get Replicate list [%d] elements\n"%entry.nbreplicas)
+                    #print("Get Replicate list [%d] elements\n"%entry.nbreplicas)
                     reps = []
                     for i in range( entry.nbreplicas ):
                         reps.append(entry.rep[i].sfn)
@@ -120,7 +124,7 @@ class lfcCmd(object):
                 
                 fileList.append(element)
                 
-                print("Next ...\n")
+                #print("Next ...\n")
                 entry = lfc.lfc_readdirxr(dirRef)
                 
         except Exception , e:
