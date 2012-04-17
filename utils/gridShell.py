@@ -20,8 +20,8 @@ class gridShell (Shell):
         super(gridShell, self).__init__()
        
         #Add all important cmds
-        self.addCmd("put", [ self._put , "Uploads local file to LFC and SE specified" , "... SRC_FILE LFC_DIR SE_INDEX\nUploads SRC_FILE to LFC_DIR and registers it to the SE specified by SE_INDEX.\nA index of SE can be acquired by running the se command."])
-        self.addCmd("putlib", [ self._putlib , "Uploads local file to LFC and SE specified" , "... SRC_FILE LFC_DIR SE_INDEX\nUploads SRC_FILE to LFC_DIR and registers it to the SE specified by SE_INDEX.\nA index of SE can be acquired by running the se command."])
+        self.addCmd("put", [ self._put , "Uploads local file to LFC and SE specified" , "... SRC_FILE [LFC_FILE] [SE_INDEX]\nUploads SRC_FILE to LFC_FILE and registers it to the SE specified by SE_INDEX. If no LFC_DIR is specified the SRC_FILE name will be used. If no SE_INDEX is specified the default SE will be used.\nA index of SE can be acquired by running the se command."])
+        self.addCmd("putlib", [ self._putlib , "Uploads local file to LFC and SE specified" , "... SRC_FILE [LFC_FILE] [SE_INDEX]\nUploads SRC_FILE to LFC_FILE and registers it to the SE specified by SE_INDEX. If no LFC_DIR is specified the SRC_FILE name will be used. If no SE_INDEX is specified the default SE will be used.\nA index of SE can be acquired by running the se command."])
         self.addCmd("get", [ self._get , "Downloads a file from LFC" , "... LFC_SRC LOCAL_DEST\nDownloads LFS_SRC from LFC to local disk specified by LOCAL_DEST." ])
         self.addCmd("info", [ self._info , "???"] )
         self.addCmd("se", [ self._se , "Prints list of known SE for current VO" , "\nPrints a list of known SE and their index."])
@@ -228,32 +228,36 @@ class gridShell (Shell):
         
         for i in fileList:
             
-            if( i["type"] == "dir" ):
-                fileType = "d"
-            elif( i["type"] == "file" ):
-                fileType = "-"
-            else:
-                fileType = "?"
-            
-            owner = i["acl"]["owner"]
-            
-            if(fullOut):
-                guid = i["GUID"]
-                outputformat = "\n%s%s%s%s \t %-50s \t %15s \t %20s \t %s"
-                print( outputformat % (fileType, i["acl"]["owner_perm"], i["acl"]["group_perm"], i["acl"]["others_perm"], owner, i["acl"]["group"], guid, i["name"]) )
+            try:
+                if( i["type"] == "dir" ):
+                    fileType = "d"
+                elif( i["type"] == "file" ):
+                    fileType = "-"
+                else:
+                    fileType = "?"
                 
-                if( i["type"] == "file" ):                
-                    reps = i["Replicas"]
-                    if(len(reps) == 0):
-                        print("\t\t<No replicas>")
-                    else:
-                        for j in range(len(reps)) :
-                            print( "[%d] %-10s" % (j, reps[j]) )
-            else:
-                guid = ""
-                owner = re.search(".*CN=([\w|-]*)", owner).group(1)
-                outputformat = "%s%s%s%s \t %-20s \t %15s \t %20s \t %s"                
-                print( outputformat % (fileType, i["acl"]["owner_perm"], i["acl"]["group_perm"], i["acl"]["others_perm"], owner, i["acl"]["group"], guid, i["name"]) )        
+                owner = i["acl"]["owner"]
+                
+                if(fullOut):
+                    guid = i["GUID"]
+                    outputformat = "\n%s%s%s%s \t %-50s \t %15s \t %20s \t %s"
+                    print( outputformat % (fileType, i["acl"]["owner_perm"], i["acl"]["group_perm"], i["acl"]["others_perm"], owner, i["acl"]["group"], guid, i["name"]) )
+                    
+                    if( i["type"] == "file" ):                
+                        reps = i["Replicas"]
+                        if(len(reps) == 0):
+                            print("\t\t<No replicas>")
+                        else:
+                            for j in range(len(reps)) :
+                                print( "[%d] %-10s" % (j, reps[j]) )
+                else:
+                    guid = ""
+                    owner = re.search(".*CN=([\w|-]*)", owner).group(1)
+                    outputformat = "%s%s%s%s \t %-20s \t %15s \t %20s \t %s"                
+                    print( outputformat % (fileType, i["acl"]["owner_perm"], i["acl"]["group_perm"], i["acl"]["others_perm"], owner, i["acl"]["group"], guid, i["name"]) )
+            except Exception , e:
+                print("Error, skipping element" % () )
+         
     
     def _lfc_getDirListing(self, path, version=2):
         return lfcCmd.ls( path , version)

@@ -136,17 +136,30 @@ class lfcCmd(object):
     def getacl(path):
         #print("Get acl for %s" % path)
         acl = {}
+        #Default value
+        acl["owner_perm"] = "???"
+        acl["owner"] = "unknown"
+        acl["group_perm"] = "???"
+        acl["group"] = "unknown" 
+        acl["others_perm"] = "???"
+        
         acls_list = lfc.lfc_getacl(path)
         for i in acls_list:
-            #print "type %d" % i.a_type
-            if( i.a_type == 1): #User permissions
-                acl["owner_perm"] = lfcCmd._numToPermString( i.a_perm )
-                acl["owner"] = lfcCmd._getusrbyuid(i.a_id)
-            elif( i.a_type == 3 ) : #Group permissions
-                acl["group_perm"] = lfcCmd._numToPermString( i.a_perm )
-                acl["group"] = lfcCmd._getgrpbygid(i.a_id)
-            elif( i.a_type == 6 ) : #others permissions
-                acl["others_perm"] = lfcCmd._numToPermString( i.a_perm )
+            try: 
+                #print "type %d" % i.a_type
+                if( i.a_type == 1): #User permissions
+                    acl["owner_perm"] = lfcCmd._numToPermString( i.a_perm )
+                    acl["owner"] = lfcCmd._getusrbyuid(i.a_id)
+                                   
+                elif( i.a_type == 3 ) : #Group permissions
+                    acl["group_perm"] = lfcCmd._numToPermString( i.a_perm )
+                    acl["group"] = lfcCmd._getgrpbygid(i.a_id)
+                        
+                elif( i.a_type == 6 ) : #others permissions
+                    acl["others_perm"] = lfcCmd._numToPermString( i.a_perm )
+
+            except Exception, e:
+                pass
         
         return acl
 
